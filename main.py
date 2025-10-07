@@ -12,6 +12,14 @@ def f_y (t, x):
 
     return -t / x
 
+def f_x_der_y (t, y):
+
+    return -t / (y**2)
+
+def f_y_der_x (t, x):
+
+    return t / (x**2)
+
 def check_x (t):
 
     return e ** (t**2 / 2)
@@ -33,8 +41,13 @@ def runge1 (x0, y0, h0, t0, eps, iterations):
         copy_x = x_nabl
         copy_y = y_nabl
 
-        x_nabl = x0 + h * f_x (t0 + h, copy_y)
-        y_nabl = y0 + h * f_y (t0 + h, copy_x)
+        F_matrix = np.array([[copy_x - (x0 + h * f_x (t0 + h, copy_y))], [copy_y - (y0 + h * f_y (t0 + h, copy_x))]])
+        F_der_matrix = np.array([[1, -h * f_x_der_y(t0 + h, copy_y)], [-h * f_y_der_x(t0+h, copy_x), 1]])
+
+        delta_z = -np.dot(np.linalg.inv(F_der_matrix), F_matrix)
+
+        x_nabl = copy_x + delta_z[0,0]
+        y_nabl = copy_y + delta_z[1,0]
 
         if (fabs(x_nabl - copy_x) + fabs(y_nabl - copy_y) < eps):
             return (x_nabl, y_nabl, h)
@@ -163,14 +176,14 @@ def main (h, eps, k):
 
     return result
 
-st.title("Лабораторна робота 1")
-h = st.number_input("Введіть крок h:", min_value=0.1, step=0.05, format="%.2f")
-eps = st.number_input("Введіть eps:", min_value=1e-6, format="%.8f")
-k = st.number_input("Введіть кількість допустимих ітерацій:", min_value=1)
+# st.title("Лабораторна робота 1")
+# h = st.number_input("Введіть крок h:", min_value=0.1, step=0.05, format="%.2f")
+# eps = st.number_input("Введіть eps:", min_value=1e-6, format="%.8f")
+# k = st.number_input("Введіть кількість допустимих ітерацій:", min_value=1)
 
-if st.button ('обрахувати'):
+# if st.button ('обрахувати'):
     
-    result = main(h, eps, k)
-    st.dataframe(result)
+#     result = main(h, eps, k)
+#     st.dataframe(result)
 
-# print(main (11, 0.00000002, 10))
+print(main (101, 0.00000002, 10))
