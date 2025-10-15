@@ -1,8 +1,9 @@
-from math import fabs, e
+from math import fabs, e, cos, sin, pi
 from numpy import arange
 import numpy as np
 import pandas as pd
-import streamlit as st
+# import streamlit as st
+import matplotlib.pyplot as plt
 
 def f_x (t, y):
 
@@ -19,6 +20,30 @@ def check_x (t):
 def check_y (t):
 
     return e ** (-t**2 / 2)
+
+def fi1 (teta):
+
+    return 8 * np.cos(teta) - 8 * np.cos(4 * teta)
+
+def fi2 (teta):
+
+    return 8 * np.sin(teta) - 8 * np.sin(4 * teta)
+
+def fi3 (teta):
+
+    return 21 * np.cos(3 * teta) - 9 * np.cos(2 * teta) + 15 * np.cos(teta) - 3
+
+def fi4 (teta):
+
+    return 21 * np.sin(3* teta) - 9 * np.sin(2*teta) + 15 * np.sin(teta)
+
+def U(teta):
+
+    return (fi1(teta) * fi3(teta) + fi2(teta) * fi4(teta)) / (fi3(teta)**2 + fi4(teta)**2)
+
+def V(teta):
+
+    return (fi2(teta)*fi3(teta) - fi1(teta)*fi4(teta))/(fi3(teta)**2 + fi4(teta)**2)
 
 def runge1 (x0, y0, h0, t0, eps, iterations):
 
@@ -75,102 +100,26 @@ def real_values (t_list):
 
     return real_list
 
-def main (h, eps, k):
+def ro_check (ro):
 
-    if h == 1 or h % 2 == 0:
+    return (8 * (ro - ro**4)) / (3 * (7*ro**3 - 3*ro**2 + 5*ro - 1))
 
-        print ('bad step')
-        return
+def main ():
+
+    teta_coords = np.arange(0, 2001, 1)
+    teta_coords = teta_coords * (pi / 1000)
     
-    values_list = [(1,1)]
-    h_list = []
-    t_list = [0]
+    u = U(teta_coords)
+    v = V(teta_coords)
 
-    h_new = h
+    fig, ax = plt.subplots()
 
-    # variant 1
+    ax.fill(u, v, alpha=0.5, color='grey')
+    ax.scatter(u, v, s=20)
 
-    # for i in range (1, 4):
+    checking = ro_check(-0.2)
+    ax.scatter(-0.2, checking, color='r', s=20)
 
-    #     x, y, h_new = runge1(values_list[i - 1][0], values_list[i - 1][1], h_new, t_list[i - 1], eps, k)
-
-    #     values_list.append ((x, y))
-    #     h_list.append (h_new)
-    #     t_list.append(t_list[i-1] + h_new)
-
-    # h_opt = min (h_list)
-
-    # variant 2
-
-    x, y, h_new = runge1(values_list[0][0], values_list[0][1], h, 0, eps, k)
-    x_pos, y_pos, h_new_pos = runge1(values_list[0][0], values_list[0][1], h_new / 2, 0, eps, k)
-    x_toCheck, y_toCheck, h_new_pos = runge1(x_pos, y_pos, h_new / 2 + h_new / 2, h_new/2, eps, k)
-
-    # if (fabs(x_toCheck - x) + fabs(y_toCheck - y) < eps): 
-
-    #     print("good h")
-
-    while (fabs(x_toCheck - x) + fabs(y_toCheck - y) > eps):
-
-        h_new /= 2
-
-        x, y = x_pos, y_pos
-        x_pos, y_pos, h_new_pos = runge1(values_list[0][0], values_list[0][1], h_new / 2, 0, eps, k)
-        x_toCheck, y_toCheck, h_new_pos = runge1(x_pos, y_pos, h_new / 2, h_new/2, eps, k)
-
-    h_opt = h_new
-    #==============================================================================================
-    values_list = values_list[0:1]
-    t_list = t_list[0:1]
-    h_list = []
-
-    for i in range (1, 4):
-
-        x, y, h_new = runge1(values_list[i - 1][0], values_list[i - 1][1], h_opt, t_list[i - 1], eps, k)
-
-        values_list.append ((x, y))
-        h_list.append (h_new)
-        t_list.append(t_list[i-1] + h_new)
-
-    n = int(1 / h_opt)
-
-    t_list = [i * h_opt for i in range(n)]
-
-    javna_3_8 (values_list, t_list, h_opt, n)
-
-    real_list = real_values (t_list)
-
-    real_list = np.array (real_list)
-    values_list = np.array (values_list)
-
-    # ======================================
-
-    delta_x = np.fabs(values_list[:, 0] - real_list[:, 0]).reshape(-1, 1)
-    delta_y = np.fabs(values_list[:, 1] - real_list[:, 1]).reshape(-1, 1)
-
-    x_val = values_list[:, 0]
-    y_val = values_list[:, 1]
-
-    x_real = real_list[:, 0]
-    y_real = real_list[:, 1]
-
-    t_list = np.array (t_list).reshape (-1, 1)
-
-    result = np.column_stack ((t_list, x_val, y_val, x_real, y_real, delta_x, delta_y))
-    columns = ['t', 'x', 'y', 'x_real', 'y_real', 'delta_x', 'delta_y']
-
-    result = pd.DataFrame(result, columns=columns)
-
-    return result
-
-st.title("Лабораторна робота 1")
-h = st.number_input("Введіть крок h:", min_value=0.1, step=0.05, format="%.2f")
-eps = st.number_input("Введіть eps:", min_value=1e-6, format="%.8f")
-k = st.number_input("Введіть кількість допустимих ітерацій:", min_value=1)
-
-if st.button ('обрахувати'):
-    
-    result = main(h, eps, k)
-    st.dataframe(result)
-
+    plt.show()
 # print(main (11, 0.00000002, 10))
+main()
